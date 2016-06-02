@@ -28,9 +28,10 @@ public class Pack {
 	private String displayName;
 	private String tokenName; // Also sub-directory name
 	private String username;
+	private String serverListURL;
 	
-	public Pack(String url, String displayName, String tokenName, String username){
-		this.url = url; this.displayName = displayName; this.tokenName=tokenName; this.username = username;
+	public Pack(String url, String displayName, String tokenName, String username, String serverListURL){
+		this.url = url; this.displayName = displayName; this.tokenName=tokenName; this.username = username; this.serverListURL = serverListURL;
 	}
 	
 	public String getUrl(){
@@ -51,18 +52,23 @@ public class Pack {
 	public String getUserName(){
 		return username;
 	}
+	
+	public String getServerListURL(){
+		return serverListURL;
+	}
 
 	public File getCache(File cache) {
 		return new File(cache, tokenName);
 	}
 
 	public static Pack readPack(DataInputStream dis) throws IOException {
-		String u,d,t,uN;
+		String u,d,t,uN,sL;
 		u = readString(dis);
 		d = readString(dis);
 		t = readString(dis);
 		uN = readString(dis);
-		return new Pack(u,d,t,uN);
+		sL = readString(dis);
+		return new Pack(u,d,t,uN, sL);
 	}
 	
 	public void writePack(DataOutputStream dos) throws IOException {
@@ -70,6 +76,7 @@ public class Pack {
 		writeString(dos, displayName);
 		writeString(dos, tokenName);
 		writeString(dos, username);
+		writeString(dos, serverListURL);
 	}
 	
 	private void writeString(DataOutputStream dos, String s) throws IOException {

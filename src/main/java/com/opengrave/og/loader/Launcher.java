@@ -49,7 +49,7 @@ import com.opengrave.og.MainThreadInterface;
 
 public class Launcher {
 
-	//public static String urlBase;
+	// public static String urlBase;
 
 	private static SSLContext sslContext;
 
@@ -59,7 +59,7 @@ public class Launcher {
 	JFrame frame = new JFrame("OpenGrave Launcher");
 
 	public static InputStream openConnection(String urlS) throws IOException {
-		if(urlS.startsWith("https:")){
+		if (urlS.startsWith("https:")) {
 			if (sslSocketFactory == null) {
 				prepSSL();
 			}
@@ -71,21 +71,22 @@ public class Launcher {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			return conn.getInputStream();			
-		}else if(urlS.startsWith("http:")){
-			
-		}else if(urlS.startsWith("ftp")){
+			return conn.getInputStream();
+		} else if (urlS.startsWith("http:")) {
+
+		} else if (urlS.startsWith("ftp")) {
 			// Does anyone seriously use FTP anymore?
 			System.out.println("Stop living in the past");
 		}
 		return null;
 	}
 
-	public Launcher(File cache, Pack pack) {
+	public Launcher(File cache, Pack pack, boolean doUpdate) {
 		cache = new File(cache, pack.getTokenName());
-		if(!cache.isDirectory()){
-			if(cache.isFile()){
-				System.out.println("File "+cache.getAbsolutePath()+" blocking creation of directory");
+		if (!cache.isDirectory()) {
+			if (cache.isFile()) {
+				System.out.println("File " + cache.getAbsolutePath()
+						+ " blocking creation of directory");
 				return;
 			}
 			cache.mkdirs();
@@ -102,35 +103,37 @@ public class Launcher {
 		frame.setSize(350, 50);
 
 		// Check each file!
-		ArrayList<String> fileList = new ArrayList<String>();
-		try {
-			bar.setString("Getting update list");
-			BufferedReader in = new BufferedReader(new InputStreamReader(
-					openConnection(pack.getUrl() + "checksums")));
-			String inputLine = "";
-			while ((inputLine = in.readLine()) != null) {
-				inputLine = inputLine.replaceFirst(" +", " ");
-				fileList.add(inputLine);
+		if (doUpdate) {
+			ArrayList<String> fileList = new ArrayList<String>();
+			try {
+				bar.setString("Getting update list");
+				BufferedReader in = new BufferedReader(new InputStreamReader(
+						openConnection(pack.getUrl() + "checksums")));
+				String inputLine = "";
+				while ((inputLine = in.readLine()) != null) {
+					inputLine = inputLine.replaceFirst(" +", " ");
+					fileList.add(inputLine);
+				}
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		bar.setMaximum(fileList.size());
-		int i = 0;
-		for (String string : fileList) {
-			String[] s = string.split(" ");
-			bar.setString("Checking " + s[1]);
-			String upstreamHash = s[0];
-			String currentHash = MessageDigestForFile.getDigest(new File(cache,
-					s[1]).getAbsolutePath());
-			if (!upstreamHash.equals(currentHash)) {
-				bar.setString("Downloading " + s[1]);
-				downloadAndSave(cache, pack.getUrl() + s[1], s[1]);
+			bar.setMaximum(fileList.size());
+			int i = 0;
+			for (String string : fileList) {
+				String[] s = string.split(" ");
+				bar.setString("Checking " + s[1]);
+				String upstreamHash = s[0];
+				String currentHash = MessageDigestForFile.getDigest(new File(
+						cache, s[1]).getAbsolutePath());
+				if (!upstreamHash.equals(currentHash)) {
+					bar.setString("Downloading " + s[1]);
+					downloadAndSave(cache, pack.getUrl() + s[1], s[1]);
+				}
+				i++;
+				bar.setValue(i);
 			}
-			i++;
-			bar.setValue(i);
 		}
 		frame.setVisible(false);
 		launch(cache, pack);
@@ -158,7 +161,7 @@ public class Launcher {
 			c = l.loadClass("com.opengrave.MainThread");
 			MainThreadInterface hgti = (MainThreadInterface) c.newInstance();
 
-			hgti.startApp(cache, pack.getUserName());
+			hgti.startApp(cache, pack.getUserName(), pack.getServerListURL());
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (InstantiationException e) {
@@ -238,7 +241,8 @@ public class Launcher {
 		if (cache.exists() && cache.isDirectory()) {
 			System.out.println("Using " + cache.getAbsolutePath());
 		} else if (cache.exists() && !cache.isDirectory()) {
-			System.out.println("There's a file called .opengrave in here. Move or delete it");
+			System.out
+					.println("There's a file called .opengrave in here. Move or delete it");
 			return;
 		} else {
 			System.out.println("Creating " + cache.getAbsolutePath());
@@ -250,37 +254,39 @@ public class Launcher {
 		boolean update = false;
 		boolean valid = true;
 		for (String arg : args) {
-			arg=arg.toLowerCase();
-			if(arg.startsWith("--run=")){
+			arg = arg.toLowerCase();
+			if (arg.startsWith("--run=")) {
 				version = arg.split("=")[1];
-			}else if(arg.equals("--noupdate")){
+			} else if (arg.equals("--noupdate")) {
 				update = false;
-			}else{
+			} else {
 				valid = false;
 			}
 			System.out.println(arg);
 		}
-		if(!valid){
+		if (!valid) {
 			System.out.println("Unknown arguement used");
-			System.out.println(" --run=PACKTOKEN   Run a specific pack, using it's token. Cannot contain spaces");
-			System.out.println(" --noupdate        Do not check integrity of files or download any missing files. Best for quick testing but not intended for users");
+			System.out
+					.println(" --run=PACKTOKEN   Run a specific pack, using it's token. Cannot contain spaces");
+			System.out
+					.println(" --noupdate        Do not check integrity of files or download any missing files. Best for quick testing but not intended for users");
 			System.exit(0);
 		}
-		if(version == null){
+		if (version == null) {
 			Chooser choose = new Chooser(cf, cache);
 			version = choose.getToken();
 		}
-		if(version==null){
+		if (version == null) {
 			System.exit(0);
 		}
 		Pack pack = cf.getPack(version);
-		if(pack == null){
-			System.out.println("No installed pack with the token : "+version);
+		if (pack == null) {
+			System.out.println("No installed pack with the token : " + version);
 			System.exit(1);
 		}
 		System.out.println("Using version : " + version);
 		String urlBase = "https://aperistudios.co.uk/hg/" + version + "/";
-		new Launcher(cache, pack);
+		new Launcher(cache, pack,update);
 	}
 
 	public static void downloadAndSave(File cache, String url, String local) {
@@ -336,26 +342,30 @@ public class Launcher {
 			return System.getProperty("user.home");
 		return System.getProperty("user.dir");
 	}
-	
+
 	public static void addDir(String s) throws IOException {
 		try {
 			Field field = ClassLoader.class.getDeclaredField("usr_paths");
 			field.setAccessible(true);
-			String[] paths = (String[])field.get(null);
+			String[] paths = (String[]) field.get(null);
 			for (int i = 0; i < paths.length; i++) {
 				if (s.equals(paths[i])) {
 					return;
 				}
 			}
-			String[] tmp = new String[paths.length+1];
-			System.arraycopy(paths,0,tmp,0,paths.length);
+			String[] tmp = new String[paths.length + 1];
+			System.arraycopy(paths, 0, tmp, 0, paths.length);
 			tmp[paths.length] = s;
-			field.set(null,tmp);
-			System.setProperty("java.library.path", System.getProperty("java.library.path") + File.pathSeparator + s);
+			field.set(null, tmp);
+			System.setProperty("java.library.path",
+					System.getProperty("java.library.path")
+							+ File.pathSeparator + s);
 		} catch (IllegalAccessException e) {
-			throw new IOException("Failed to get permissions to set library path");
+			throw new IOException(
+					"Failed to get permissions to set library path");
 		} catch (NoSuchFieldException e) {
-			throw new IOException("Failed to get field handle to set library path");
+			throw new IOException(
+					"Failed to get field handle to set library path");
 		}
 	}
 }

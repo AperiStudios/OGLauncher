@@ -118,7 +118,7 @@ public class ConfigFile {
 		if(!s.endsWith("/")){
 			s = s + "/";
 		}
-		String prefTag = null, display = null;
+		String prefTag = null, display = null, serverList = null;
 		try{
 			BufferedReader in = new BufferedReader(new InputStreamReader(
 					Launcher.openConnection(s + "meta")));
@@ -128,11 +128,13 @@ public class ConfigFile {
 					prefTag = inputLine;
 				}else if(display == null){
 					display = inputLine;
+				}else if(serverList == null){
+					serverList = inputLine;
 				}
 			}
 			prefTag = getAcceptableTag(prefTag);
 			System.out.println("Adding new Pack : "+prefTag+" "+display);
-			Pack p = new Pack(s, display, prefTag, userName);
+			Pack p = new Pack(s, display, prefTag, userName, serverList);
 			packs.add(p);
 		}catch(IOException io){
 			System.out.println("Could not connect to pack, Not added"); // TODO Alert user via window?

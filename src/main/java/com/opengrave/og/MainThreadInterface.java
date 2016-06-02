@@ -21,5 +21,5 @@ package com.opengrave.og;
 import java.io.File;
 
 public interface MainThreadInterface {
-	public void startApp(File f, String username);
+	public void startApp(File f, String username, String serverList);
 }
